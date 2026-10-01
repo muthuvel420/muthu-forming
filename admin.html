@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Agri Admin Dashboard | Muthu Farming</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .admin-container { padding: 3rem 0; }
+    .admin-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem; }
+    .admin-tabs { display: flex; gap: 1rem; margin-bottom: 2rem; border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; flex-wrap: wrap; }
+    .tab-btn { background: none; border: none; font-size: 1.05rem; font-weight: 700; color: var(--text-muted); cursor: pointer; padding: 0.5rem 1rem; position: relative; transition: var(--transition); }
+    .tab-btn.active { color: var(--green-700); }
+    .tab-btn.active::after { content: ''; position: absolute; bottom: -0.6rem; left: 0; width: 100%; height: 3px; background: var(--green-500); border-radius: 3px; }
+    .data-table-card { background: white; border-radius: var(--radius-lg); border: 1px solid var(--border); box-shadow: var(--shadow-sm); overflow-x: auto; margin-bottom: 2rem; }
+    table { width: 100%; border-collapse: collapse; text-align: left; font-size: 0.92rem; }
+    th { background: var(--green-50); color: var(--green-900); padding: 1rem 1.2rem; font-weight: 800; border-bottom: 1px solid var(--border); white-space: nowrap; }
+    td { padding: 1rem 1.2rem; border-bottom: 1px solid var(--border); color: var(--text-dark); vertical-align: middle; }
+    tr:hover { background: rgba(16,185,129,0.03); }
+    .badge { display: inline-block; padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.78rem; font-weight: 800; text-transform: uppercase; }
+    .action-btn { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.1rem; padding: 0.3rem 0.6rem; transition: var(--transition); border-radius: 8px; }
+    .action-btn:hover { color: #ef4444; background: #fee2e2; }
+    .status-select { padding: 0.4rem 0.6rem; border-radius: 8px; border: 1px solid var(--border); font-size: 0.85rem; font-weight: 700; cursor: pointer; }
+    .add-product-box { background: white; padding: 2rem; border-radius: var(--radius-lg); border: 1px solid var(--border); box-shadow: var(--shadow-sm); margin-bottom: 2rem; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="container nav-container">
+      <a href="index.html" class="logo">
+        <i class="fas fa-seedling"></i>
+        Muthu <span>Farming</span>
+      </a>
+      <nav>
+        <ul class="nav-links" id="navLinks">
+          <li><a href="index.html">Home</a></li>
+          <li><a href="about.html">About Us</a></li>
+          <li><a href="services.html">Services</a></li>
+          <li><a href="products.html">Products</a></li>
+          <li><a href="projects.html">Projects</a></li>
+          <li><a href="gallery.html">Gallery</a></li>
+          <li><a href="contact.html">Contact</a></li>
+          <li><a href="login.html" class="login-nav-btn" id="loginNavBtn"><i class="fas fa-sign-in-alt"></i> Login</a></li>
+          <li><a href="admin.html" class="admin-nav-btn active"><i class="fas fa-user-shield"></i> Admin</a></li>
+        </ul>
+      </nav>
+      <button class="hamburger" id="hamburger" aria-label="Menu">
+        <i class="fas fa-bars"></i>
+      </button>
+    </div>
+  </header>
+
+  <main class="admin-container">
+    <div class="container">
+      <div class="admin-header">
+        <div>
+          <h2>Agri SQLite Database Dashboard</h2>
+          <p style="color: var(--text-muted);">Real-time management for Farmer Quotations, Inquiries & Product Catalog (Connected to SQLite DB).</p>
+        </div>
+        <button class="btn btn-outline-dark" onclick="fetchData()"><i class="fas fa-sync-alt"></i> Refresh Data</button>
+      </div>
+
+      <div class="admin-tabs">
+        <button class="tab-btn active" id="tabQuotesBtn" onclick="switchTab('quotes')"><i class="fas fa-file-invoice-dollar"></i> Agri Quotations (<span id="quoteCount">0</span>)</button>
+        <button class="tab-btn" id="tabContactsBtn" onclick="switchTab('contacts')"><i class="fas fa-envelope-open-text"></i> Contact Messages (<span id="contactCount">0</span>)</button>
+        <button class="tab-btn" id="tabUsersBtn" onclick="switchTab('users')"><i class="fas fa-users"></i> Registered Farmers (<span id="userCount">0</span>)</button>
+        <button class="tab-btn" id="tabProductsBtn" onclick="switchTab('products')"><i class="fas fa-box-open"></i> Manage Products (<span id="productCount">0</span>)</button>
+      </div>
+
+      <!-- Quotes Section -->
+      <div id="quotesSection" class="data-table-card">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Customer / Farm</th>
+              <th>Contact Info</th>
+              <th>Agri Solution / Crop</th>
+              <th>Area / Qty</th>
+              <th>Farm Details</th>
+              <th>Date</th>
+              <th>Status</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="quotesTableBody">
+            <tr><td colspan="9" style="text-align: center; padding: 2rem;">Loading quotation data from SQLite...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Contacts Section -->
+      <div id="contactsSection" class="data-table-card" style="display: none;">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Subject</th>
+              <th>Message</th>
+              <th>Date</th>
+              <th>Action</th>
+            </tr>
+          </thead>
+          <tbody id="contactsTableBody">
+            <tr><td colspan="8" style="text-align: center; padding: 2rem;">Loading contact data from SQLite...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Users Section -->
+      <div id="usersSection" class="data-table-card" style="display: none;">
+        <table>
+          <thead>
+            <tr>
+              <th>Farmer Name</th>
+              <th>Phone Number</th>
+              <th>Email ID</th>
+              <th>Farm Location</th>
+              <th>Registered Date</th>
+            </tr>
+          </thead>
+          <tbody id="usersTableBody">
+            <tr><td colspan="6" style="text-align: center; padding: 2rem;">Loading registered farmers from SQLite...</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Products Section -->
+      <div id="productsSection" style="display: none;">
+        <div class="add-product-box">
+          <h3 style="color: var(--green-800); margin-bottom: 1rem;"><i class="fas fa-plus-circle"></i> Add New Product to SQLite Database</h3>
+          <form id="addProductForm" onsubmit="addProduct(event)">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="pTitle">Product Name *</label>
+                <input type="text" id="pTitle" class="form-control" placeholder="e.g. 7HP Power Weeder Machine" required>
+              </div>
+              <div class="form-group">
+                <label for="pPrice">Price / Subsidy Tag</label>
+                <input type="text" id="pPrice" class="form-control" placeholder="e.g. ₹45,000 / Govt Subsidy Eligible">
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="pIcon">FontAwesome Icon Class</label>
+                <select id="pIcon" class="form-control">
+                  <option value="fas fa-tractor">Tractor / Machine (fas fa-tractor)</option>
+                  <option value="fas fa-droplet">Water / Irrigation (fas fa-droplet)</option>
+                  <option value="fas fa-sun">Solar Power (fas fa-sun)</option>
+                  <option value="fas fa-warehouse">Greenhouse / Polyhouse (fas fa-warehouse)</option>
+                  <option value="fas fa-leaf">Organic Waste / Bio (fas fa-leaf)</option>
+                  <option value="fas fa-shield-halved">Solar Fence (fas fa-shield-halved)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label for="pDesc">Description *</label>
+                <input type="text" id="pDesc" class="form-control" placeholder="Brief technical specs and features..." required>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i> Save Product to Database</button>
+          </form>
+        </div>
+
+        <div class="data-table-card">
+          <table>
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Icon</th>
+                <th>Product Name</th>
+                <th>Price / Tag</th>
+                <th>Description</th>
+                <th>Date Added</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody id="productsTableBody">
+              <tr><td colspan="7" style="text-align: center; padding: 2rem;">Loading product data from SQLite...</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    const API_BASE = 'http://localhost:5000/api';
+
+    function switchTab(tab) {
+      document.getElementById('tabQuotesBtn').classList.toggle('active', tab === 'quotes');
+      document.getElementById('tabContactsBtn').classList.toggle('active', tab === 'contacts');
+      document.getElementById('tabUsersBtn').classList.toggle('active', tab === 'users');
+      document.getElementById('tabProductsBtn').classList.toggle('active', tab === 'products');
+      document.getElementById('quotesSection').style.display = tab === 'quotes' ? 'block' : 'none';
+      document.getElementById('contactsSection').style.display = tab === 'contacts' ? 'block' : 'none';
+      document.getElementById('usersSection').style.display = tab === 'users' ? 'block' : 'none';
+      document.getElementById('productsSection').style.display = tab === 'products' ? 'block' : 'none';
+    }
+
+    async function fetchData() {
+      try {
+        const [qRes, cRes, pRes, uRes] = await Promise.all([
+          fetch(`${API_BASE}/quotes`).then(r => r.json()),
+          fetch(`${API_BASE}/contacts`).then(r => r.json()),
+          fetch(`${API_BASE}/products`).then(r => r.json()),
+          fetch(`${API_BASE}/users`).then(r => r.json())
+        ]);
+
+        if (qRes.success) renderQuotes(qRes.data);
+        if (cRes.success) renderContacts(cRes.data);
+        if (pRes.success) renderProducts(pRes.data);
+        if (uRes.success) renderUsers(uRes.data);
+      } catch (err) {
+        console.warn('Backend SQLite API error:', err);
+      }
+    }
+
+    function renderUsers(users) {
+      document.getElementById('userCount').innerText = users.length;
+      const tbody = document.getElementById('usersTableBody');
+      if (!users.length) {
+        tbody.innerHTML = `<tr><td colspan="6" style="text-align: center; color: var(--text-muted);">No registered farmers in SQLite DB.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = users.map(u => `
+        <tr>
+          <td><strong>${u.id}</strong></td>
+          <td><strong>${u.name}</strong></td>
+          <td><i class="fas fa-phone"></i> +91 ${u.phone}</td>
+          <td><i class="fas fa-envelope"></i> ${u.email}</td>
+          <td><i class="fas fa-location-dot"></i> ${u.location || 'Tamil Nadu'}</td>
+          <td>${new Date(u.createdAt).toLocaleDateString()}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderQuotes(quotes) {
+      document.getElementById('quoteCount').innerText = quotes.length;
+      const tbody = document.getElementById('quotesTableBody');
+      if (!quotes.length) {
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; color: var(--text-muted);">No quotation requests in SQLite DB.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = quotes.map(q => `
+        <tr>
+          <td><strong>${q.id}</strong></td>
+          <td><strong>${q.name}</strong><br><small style="color:var(--text-muted);">${q.company || 'N/A'}</small></td>
+          <td><i class="fas fa-envelope"></i> ${q.email}<br><i class="fas fa-phone"></i> ${q.phone}</td>
+          <td><span class="project-tag">${q.material}</span><br><small>${q.process}</small></td>
+          <td>${q.quantity || 1} unit(s) <br><small>(${q.thickness || '-'})</small></td>
+          <td style="max-width:200px;">${q.details || '-'}</td>
+          <td>${new Date(q.createdAt).toLocaleDateString()}</td>
+          <td>
+            <select class="status-select" onchange="updateStatus('${q.id}', this.value)">
+              <option value="Pending" ${q.status === 'Pending' ? 'selected' : ''}>Pending</option>
+              <option value="Quoted" ${q.status === 'Quoted' ? 'selected' : ''}>Quoted</option>
+              <option value="Completed" ${q.status === 'Completed' ? 'selected' : ''}>Completed</option>
+            </select>
+          </td>
+          <td>
+            <button class="action-btn" title="Delete" onclick="deleteQuote('${q.id}')"><i class="fas fa-trash-alt"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderContacts(contacts) {
+      document.getElementById('contactCount').innerText = contacts.length;
+      const tbody = document.getElementById('contactsTableBody');
+      if (!contacts.length) {
+        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; color: var(--text-muted);">No contact messages in SQLite DB.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = contacts.map(c => `
+        <tr>
+          <td><strong>${c.id}</strong></td>
+          <td><strong>${c.name}</strong></td>
+          <td>${c.email}</td>
+          <td>${c.phone}</td>
+          <td><span class="project-tag">${c.subject}</span></td>
+          <td style="max-width:250px;">${c.message}</td>
+          <td>${new Date(c.createdAt).toLocaleDateString()}</td>
+          <td>
+            <button class="action-btn" title="Delete" onclick="deleteContact('${c.id}')"><i class="fas fa-trash-alt"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function renderProducts(products) {
+      document.getElementById('productCount').innerText = products.length;
+      const tbody = document.getElementById('productsTableBody');
+      if (!products.length) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted);">No products found in SQLite DB.</td></tr>`;
+        return;
+      }
+      tbody.innerHTML = products.map(p => `
+        <tr>
+          <td><strong>${p.id}</strong></td>
+          <td style="font-size: 1.3rem; color: var(--green-600);"><i class="${p.icon_class}"></i></td>
+          <td><strong>${p.title}</strong></td>
+          <td><span class="badge badge-quoted">${p.price_tag}</span></td>
+          <td style="max-width:260px;">${p.description}</td>
+          <td>${new Date(p.createdAt).toLocaleDateString()}</td>
+          <td>
+            <button class="action-btn" title="Delete Product" onclick="deleteProduct('${p.id}')"><i class="fas fa-trash-alt"></i></button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    async function addProduct(e) {
+      e.preventDefault();
+      const payload = {
+        title: document.getElementById('pTitle').value,
+        price_tag: document.getElementById('pPrice').value || 'Custom Order',
+        icon_class: document.getElementById('pIcon').value,
+        description: document.getElementById('pDesc').value
+      };
+
+      try {
+        const res = await fetch(`${API_BASE}/products`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const result = await res.json();
+        alert(result.message || 'Product added!');
+        document.getElementById('addProductForm').reset();
+        fetchData();
+      } catch (err) {
+        alert('Error adding product to backend.');
+      }
+    }
+
+    async function deleteProduct(id) {
+      if (!confirm('Delete this product from SQLite Database?')) return;
+      try {
+        await fetch(`${API_BASE}/products/${id}`, { method: 'DELETE' });
+        fetchData();
+      } catch (err) {
+        alert('Error deleting product');
+      }
+    }
+
+    async function updateStatus(id, status) {
+      try {
+        await fetch(`${API_BASE}/quotes/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ status })
+        });
+      } catch (err) {
+        console.error('Failed to update status');
+      }
+    }
+
+    async function deleteQuote(id) {
+      if (!confirm('Are you sure you want to delete this quote request?')) return;
+      try {
+        await fetch(`${API_BASE}/quotes/${id}`, { method: 'DELETE' });
+        fetchData();
+      } catch (err) {
+        console.error('Failed to delete quote');
+      }
+    }
+
+    async function deleteContact(id) {
+      if (!confirm('Are you sure you want to delete this contact message?')) return;
+      try {
+        await fetch(`${API_BASE}/contacts/${id}`, { method: 'DELETE' });
+        fetchData();
+      } catch (err) {
+        console.error('Failed to delete contact');
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', fetchData);
+  </script>
+  <script src="script.js"></script>
+  <script src="js/script.js"></script>
+</body>
+</html>
